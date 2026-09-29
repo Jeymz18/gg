@@ -45,40 +45,80 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  final searchController = TextEditingController();
+
+  List<Student> filteredStudents = [];
+
+  @override
+  void initState() {
+    super.initState();
+    filteredStudents = students;
+  }
+
+  void searchStudents(String query) {
+    setState(() {
+      filteredStudents = students.where((student) {
+        return student.name
+            .toLowerCase()
+            .contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Information System'),
       ),
-      body: ListView.builder(
-        itemCount: students.length,
-        itemBuilder: (context, index) {
-          final student = students[index];
-          return ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(student.name),
-            subtitle: Text(student.course),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                setState(() {
-                  students.removeAt(index);
-                });
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: searchController,
+              onChanged: searchStudents,
+              decoration: const InputDecoration(
+                labelText: 'Search Student',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredStudents.length,
+              itemBuilder: (context, index) {
+                final student = filteredStudents[index];
+
+                return ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text(student.name),
+                  subtitle: Text(student.course),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                        students.remove(student);
+                        filteredStudents = students;
+                      });
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentDetailsPage(
+                          student: student,
+                        ),
+                      ),
+                    );
+                  },
+                );
               },
             ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StudentDetailsPage(
-                    student: student,
-                  ),
-                ),
-              );
-            },
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -88,9 +128,11 @@ class _HomePageState extends State<HomePage> {
               builder: (context) => const AddStudentPage(),
             ),
           );
+
           if (newStudent != null) {
             setState(() {
               students.add(newStudent);
+              filteredStudents = students;
             });
           }
         },
